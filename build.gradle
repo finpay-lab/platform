@@ -5,10 +5,18 @@ plugins {
     id 'com.finpay.quality-conventions' apply false
 }
 
+// Local builds stay on -SNAPSHOT. Publication overrides the version with the
+// `finpay.publishVersion` property so GitHub Packages receives a non-SNAPSHOT
+// release (GitHub Packages does not support SNAPSHOT artifacts).
+def effectiveVersion = providers.gradleProperty('finpay.publishVersion').getOrElse('0.0.1-SNAPSHOT')
+
 allprojects {
     group = 'com.finpay'
-    version = '0.0.1-SNAPSHOT'
+    version = effectiveVersion
 }
 
-// Subprojects that are shared libraries / build-logic are configured by their
-// own build.gradle applying the conventions. The root aggregates them.
+// Publishing is configured per-module by the `com.finpay.publish-conventions`
+// plugin (declared in each library's build.gradle). It publishes to the
+// finpay-lab/platform GitHub Packages Maven registry using gpr.user/gpr.token
+// (expanded from GITHUB_ACTOR/GITHUB_TOKEN in gradle.properties). No publishing
+// config belongs in the root build.

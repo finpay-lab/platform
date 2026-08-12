@@ -5,7 +5,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = 'microservice-lab'
+rootProject.name = 'finpay-platform'
 
 dependencyResolutionManagement {
     repositories {

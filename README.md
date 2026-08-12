@@ -1,4 +1,11 @@
-# microservice-lab (FinPay)
+# finpay/platform (FinPay)
+
+> **Repo identity (TASK-014):** this repository is `finpay-lab/platform` — the
+> FinPay engineering **platform** repo. It owns the shared engineering libraries
+> (`libraries/common-*`), all architecture docs (`docs/`), the contracts
+> (`contracts/`), and the build conventions. Each business service lives in its
+> own repository (one repo per service, ADR-0011) and consumes the
+> `com.finpay:common-*` libraries from GitHub Packages.
 
 A fintech **distributed-systems laboratory**. The point is to demonstrate *why*
 architecture decisions exist — SAGA + Outbox, database-per-service, idempotency,

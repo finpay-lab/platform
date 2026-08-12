@@ -1,0 +1,42 @@
+// Publishes a library to GitHub Packages (Maven) so sibling service repos under
+// finpay-lab can consume com.finpay:* artifacts. Credentials are supplied as
+// Gradle properties (preferred) or env:
+//   gradle publish -Pgpr.user=$ACTOR -Pgpr.token=$TOKEN
+//   or: export GITHUB_ACTOR / GITHUB_TOKEN before the build.
+// NO secret is ever committed. Packages are repo-scoped to finpay-lab/platform
+// (which owns these libraries); org-scoped URLs 404 unless a repo matches the
+// artifact.
+//
+// Configuration cache is disabled in gradle.properties (maven-publish's
+// generatePom task is not config-cache compatible in Gradle 8.10), so using
+// project.findProperty()/System.getenv() here is safe.
+plugins {
+    id 'maven-publish'
+}
+
+def gprUser = project.findProperty('gpr.user') as String ?: System.getenv('GITHUB_ACTOR')
+def gprToken = project.findProperty('gpr.token') as String ?: System.getenv('GITHUB_TOKEN')
+
+publishing {
+    repositories {
+        maven {
+            name = 'GitHubPackages'
+            url = uri('https://maven.pkg.github.com/finpay-lab/platform')
+            credentials {
+                username = gprUser
+                password = gprToken
+            }
+        }
+    }
+    publications {
+        maven(MavenPublication) {
+            from components.java
+            groupId = 'com.finpay'
+            version = project.version.toString()
+        }
+    }
+}
+
+tasks.withType(AbstractPublishToMaven).configureEach {
+    notCompatibleWithConfigurationCache('maven-publish tasks capture project state')
+}

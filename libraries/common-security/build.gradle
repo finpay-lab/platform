@@ -1,6 +1,7 @@
 plugins {
     id 'com.finpay.spring-conventions'
     id 'com.finpay.testing-conventions'
+    id 'com.finpay.publish-conventions'
 }
 
 description = 'FinPay shared security: JWT principal extraction, RBAC helpers.'

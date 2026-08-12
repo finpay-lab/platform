@@ -3,6 +3,9 @@
 build/
 !gradle/wrapper/gradle-wrapper.jar
 
+# TASK-014: local working copies of the sibling service repos (never committed)
+_scaffold/
+
 # IDE
 .idea/
 *.iml
