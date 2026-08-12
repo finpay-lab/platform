@@ -1,0 +1,179 @@
+# Local FinPay infrastructure (TASK-001). Bring up with:
+#
+#   docker compose up -d
+#   docker compose ps
+#
+# Business services run via Gradle/IDE against these hosts (LOCAL_DEVELOPMENT.md).
+# Version baseline per ADR-0001: PostgreSQL 16, Kafka 3.8 (KRaft), Redis 7.4,
+# OpenSearch 2.17. DO NOT bump without an ADR.
+
+name: finpay-lab
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: finpay-postgres
+    environment:
+      POSTGRES_USER: finpay
+      POSTGRES_PASSWORD: finpay
+      POSTGRES_DB: finpay
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finpay -d finpay"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # NOTE (ADR-0005): database-per-service is logical ownership + migrations,
+    # not physical separation locally. Each service uses its own schema and the
+    # shared single Postgres container keeps the lab light; prod splits per service.
+
+  kafka:
+    image: apache/kafka:3.8.0
+    container_name: finpay-kafka
+    ports:
+      - "9092:9092"   # advertised to host clients (plaintext)
+      - "29092:29092" # advertised inside the compose network
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: CONTROLLER://kafka:9093,PLAINTEXT://kafka:29092,PLAINTEXT_HOST://:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka-data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 15
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: finpay-kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: finpay-local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  redis:
+    image: redis:7.4
+    container_name: finpay-redis
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  opensearch:
+    image: opensearchproject/opensearch:2.17.0
+    container_name: finpay-opensearch
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: true
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch-data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+
+  opensearch-dashboards:
+    image: opensearchproject/opensearch-dashboards:2.17.0
+    container_name: finpay-opensearch-dashboards
+    environment:
+      OPENSEARCH_HOSTS: '["http://opensearch:9200"]'
+      DISABLE_SECURITY_DASHBOARDS_PLUGIN: "true"
+    ports:
+      - "5601:5601"
+    depends_on:
+      opensearch:
+        condition: service_healthy
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:25.0
+    container_name: finpay-keycloak
+    command: ["start-dev", "--http-port", "8081"]
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "8081:8081"
+    volumes:
+      - keycloak-data:/opt/keycloak/data
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8081"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: finpay-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: finpay-grafana
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.112.0
+    container_name: finpay-otel-collector
+    ports:
+      - "4317:4317" # OTLP/gRPC
+      - "4318:4318" # OTLP/HTTP
+      - "8888:8888" # self metrics
+    volumes:
+      - ./observability/otel/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres-data:
+  kafka-data:
+  redis-data:
+  opensearch-data:
+  keycloak-data:
+  prometheus-data:
+  grafana-data:

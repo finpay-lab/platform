@@ -1,0 +1,10 @@
+plugins {
+    id 'com.finpay.java-conventions'
+    id 'com.finpay.testing-conventions'
+}
+
+description = 'FinPay shared test kit: ArchUnit architecture rules + Testcontainers bases (proves the pure-java convention chain without a Spring BOM).'
+
+dependencies {
+    api libs.archunit
+}

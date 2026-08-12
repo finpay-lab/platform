@@ -1,0 +1,14 @@
+plugins {
+    id 'com.finpay.spring-conventions'
+    id 'com.finpay.testing-conventions'
+}
+
+description = 'FinPay shared observability: OpenTelemetry tracing + Prometheus metrics helpers.'
+
+dependencies {
+    api libs.opentelemetry.api
+    api libs.opentelemetry.sdk
+    api libs.opentelemetry.exporter.otlp
+    implementation libs.micrometer.registry.prometheus
+    implementation libs.spring.boot.starter.actuator
+}

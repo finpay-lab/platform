@@ -1,0 +1,25 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
+
+rootProject.name = 'microservice-lab'
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+    }
+}
+
+// Build conventions are precompiled Groovy plugins consumed by every module.
+includeBuild 'build-logic'
+
+// Shared engineering libraries (cross-cutting concerns).
+include 'libraries:common-web'
+include 'libraries:common-security'
+include 'libraries:common-observability'
+include 'libraries:common-test'
+
+// Business services land in later phases (P1+). Placeholder kept intentional.

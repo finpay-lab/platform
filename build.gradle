@@ -1,0 +1,14 @@
+plugins {
+    id 'com.finpay.java-conventions' apply false
+    id 'com.finpay.spring-conventions' apply false
+    id 'com.finpay.testing-conventions' apply false
+    id 'com.finpay.quality-conventions' apply false
+}
+
+allprojects {
+    group = 'com.finpay'
+    version = '0.0.1-SNAPSHOT'
+}
+
+// Subprojects that are shared libraries / build-logic are configured by their
+// own build.gradle applying the conventions. The root aggregates them.

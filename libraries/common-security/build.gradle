@@ -1,0 +1,13 @@
+plugins {
+    id 'com.finpay.spring-conventions'
+    id 'com.finpay.testing-conventions'
+}
+
+description = 'FinPay shared security: JWT principal extraction, RBAC helpers.'
+
+dependencies {
+    api libs.spring.boot.starter.security
+    api libs.spring.boot.starter.web
+    implementation project(':libraries:common-web')
+    testImplementation libs.spring.security.test
+}

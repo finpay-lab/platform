@@ -1,0 +1,18 @@
+# Minimal local Prometheus config (observability/). Full scrape/alert rules land
+# in the observability phase (P10, TASK-100). Pull model: services expose
+# /actuator/prometheus; the OTel collector is scraped too.
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "otel-collector"
+    static_configs:
+      - targets: ["otel-collector:8888"]
+
+  # Business services (added per service once they exist, P1+):
+  # - job_name: "identity-service"
+  #   metrics_path: /actuator/prometheus
+  #   static_configs:
+  #     - targets: ["host.docker.internal:8082"]

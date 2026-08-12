@@ -1,0 +1,13 @@
+plugins {
+    id 'com.finpay.spring-conventions'
+    id 'com.finpay.testing-conventions'
+}
+
+description = 'FinPay shared web concerns: problem details, correlation id, pagination.'
+
+dependencies {
+    api libs.spring.boot.starter.web
+    api libs.spring.boot.starter.validation
+    api libs.jackson.datatype.jsr310
+    implementation libs.spring.boot.starter.actuator
+}
