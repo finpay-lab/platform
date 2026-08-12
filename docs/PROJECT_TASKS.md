@@ -9,6 +9,7 @@ Legend for dependency arrows: `TASK-xxx → TASK-yyy` means yyy depends on xxx.
 
 | ID | Title | Deps | Status |
 |----|-------|------|--------|
+| TASK-001 | Repo skeleton + Gradle multi-module + settings | — | DONE |
 | TASK-002 | build-logic convention plugins (java/spring/test/quality) | TASK-001 | DONE |
 | TASK-003 | Shared lib: common-web (problem details, correlation, pagination) | TASK-002 | DONE |
 | TASK-004 | Shared lib: common-security (JWT auth, RBAC, principal) | TASK-002 | DONE |
@@ -16,17 +17,9 @@ Legend for dependency arrows: `TASK-xxx → TASK-yyy` means yyy depends on xxx.
 | TASK-006 | Shared lib: common-test (Testcontainers base, ArchUnit rules) | TASK-002 | DONE |
 | TASK-007 | docker-compose local infra (PG/Kafka/Redis/OpenSearch/Keycloak/Prom) | TASK-001 | DONE |
 | TASK-008 | CI skeleton (build/test/scan) GitHub Actions | TASK-002 | DONE |
-| TASK-009 | `contracts/` event + api contract stubs + versioning policy | TASK-001 | PLANNED |
-|----|-------|------|--------|
-| TASK-001 | Repo skeleton + Gradle multi-module + settings | — | DONE |
-| TASK-002 | build-logic convention plugins (java/spring/test/quality) | TASK-001 | PLANNED |
-| TASK-003 | Shared lib: common-web (problem details, correlation, pagination) | TASK-002 | PLANNED |
-| TASK-004 | Shared lib: common-security (JWT auth, RBAC, principal) | TASK-002 | PLANNED |
-| TASK-005 | Shared lib: common-observability (OTel, metrics, tracing) | TASK-002 | PLANNED |
-| TASK-006 | Shared lib: common-test (Testcontainers base, ArchUnit rules) | TASK-002 | PLANNED |
-| TASK-007 | docker-compose local infra (PG/Kafka/Redis/OpenSearch/Keycloak/Prom) | TASK-001 | PLANNED |
-| TASK-008 | CI skeleton (build/test/scan) GitHub Actions | TASK-002 | PLANNED |
-| TASK-009 | `contracts/` event + api contract stubs + versioning policy | TASK-001 | PLANNED |
+| TASK-009 | `contracts/` event + api contract stubs + versioning policy | TASK-001 | DONE |
+| TASK-014 | Multi-repo scaffold: finpay-lab org, 16 sibling repos, each consumes platform shared libs via composite build (git submodule + includeBuild) | TASK-001 | DONE |
+| TASK-015 | Shared-lib distribution decision (ADR-0011): composite-build over GitHub Packages | TASK-014 | DONE |
 
 ## P1 — Identity + Customer + Account + Gateway
 
