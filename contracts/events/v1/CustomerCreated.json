@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finpay.example/contracts/events/v1/CustomerCreated.json",
+  "title": "CustomerCreated",
+  "description": "Published by customer-service on the `finpay.customer` topic when a customer profile is created. Partitioned by customerId.",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique event identifier. Consumers MUST deduplicate on this field (outbox redelivery / at-least-once semantics)."
+    },
+    "eventType": {
+      "const": "CustomerCreated",
+      "description": "Fixed event type; matches the schema name and the stream-filterable discriminator."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 timestamp when the event occurred."
+    },
+    "version": {
+      "const": 1,
+      "description": "Major schema version of this event. Additive changes stay at the same major; breaking changes require a new vN/ schema."
+    },
+    "partitionKey": {
+      "type": "string",
+      "description": "Kafka partition key; equals the business key customerId for ordering per customer."
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "customerId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Customer aggregate identifier."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["PENDING", "ACTIVE", "SUSPENDED", "BLOCKED", "CLOSED"],
+          "description": "Customer lifecycle status at creation time."
+        },
+        "kycState": {
+          "type": "string",
+          "enum": ["NOT_STARTED", "PENDING", "APPROVED", "REJECTED"],
+          "description": "KYC verification state at creation time."
+        },
+        "ts": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Business timestamp of the customer creation."
+        }
+      },
+      "required": ["customerId", "status", "kycState", "ts"]
+    }
+  },
+  "required": ["eventId", "eventType", "occurredAt", "version", "partitionKey", "payload"],
+  "examples": [
+    {
+      "eventId": "6b8f0b42-3b7c-4c8a-9d2e-1a2b3c4d5e6f",
+      "eventType": "CustomerCreated",
+      "occurredAt": "2026-08-12T06:22:31.123456Z",
+      "version": 1,
+      "partitionKey": "e5d4c3b2-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
+      "payload": {
+        "customerId": "e5d4c3b2-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
+        "status": "PENDING",
+        "kycState": "NOT_STARTED",
+        "ts": "2026-08-12T06:22:31.100000Z"
+      }
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finpay.example/contracts/events/v1/AccountCreated.json",
+  "title": "AccountCreated",
+  "description": "Published by account-service on the `finpay.account` topic when a financial account is created. Partitioned by accountId.",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique event identifier. Consumers MUST deduplicate on this field (outbox redelivery / at-least-once semantics)."
+    },
+    "eventType": {
+      "const": "AccountCreated",
+      "description": "Fixed event type; matches the schema name and the stream-filterable discriminator."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 timestamp when the event occurred."
+    },
+    "version": {
+      "const": 1,
+      "description": "Major schema version of this event. Additive changes stay at the same major; breaking changes require a new vN/ schema."
+    },
+    "partitionKey": {
+      "type": "string",
+      "description": "Kafka partition key; equals the business key accountId for ordering per account."
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "accountId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Account aggregate identifier."
+        },
+        "customerId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Owning customer identifier."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO-4217 currency code of the account."
+        },
+        "status": {
+          "type": "string",
+          "enum": ["OPEN", "FROZEN", "SUSPENDED", "CLOSED"],
+          "description": "Account lifecycle status at creation time."
+        }
+      },
+      "required": ["accountId", "customerId", "currency", "status"]
+    }
+  },
+  "required": ["eventId", "eventType", "occurredAt", "version", "partitionKey", "payload"],
+  "examples": [
+    {
+      "eventId": "9f2e1d4c-5b6a-7c8d-9e0f-112233445566",
+      "eventType": "AccountCreated",
+      "occurredAt": "2026-08-12T06:25:41.000000Z",
+      "version": 1,
+      "partitionKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "payload": {
+        "accountId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "customerId": "e5d4c3b2-a1b2-c3d4-e5f6-a1b2c3d4e5f6",
+        "currency": "EUR",
+        "status": "OPEN"
+      }
+    }
+  ]
+}

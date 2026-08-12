@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finpay.example/contracts/events/v1/TransferCreated.json",
+  "title": "TransferCreated",
+  "description": "Published by transfer-service (SAGA orchestrator, ADR-0003) on the `finpay.transfer` topic when a money-transfer saga is initiated. Partitioned by transferId.",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique event identifier. Consumers MUST deduplicate on this field (outbox redelivery / at-least-once semantics)."
+    },
+    "eventType": {
+      "const": "TransferCreated",
+      "description": "Fixed event type; matches the schema name and the stream-filterable discriminator."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 timestamp when the event occurred."
+    },
+    "version": {
+      "const": 1,
+      "description": "Major schema version of this event. Additive changes stay at the same major; breaking changes require a new vN/ schema."
+    },
+    "partitionKey": {
+      "type": "string",
+      "description": "Kafka partition key; equals the business key transferId for saga ordering."
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "transferId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Transfer saga identifier."
+        },
+        "from": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Source accountId."
+        },
+        "to": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Destination accountId."
+        },
+        "amount": {
+          "type": "string",
+          "format": "decimal",
+          "description": "Transfer amount as a decimal string (no floating point)."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO-4217 currency code of the transfer."
+        },
+        "status": {
+          "const": "CREATED",
+          "description": "Transfer state machine status at saga start."
+        },
+        "sagaStep": {
+          "const": "VALIDATION",
+          "description": "Current saga step (legal steps: VALIDATION, RESERVATION, RISK_CHECK, DEBIT, CREDIT, FINALIZATION, NOTIFICATION, COMPENSATION)."
+        }
+      },
+      "required": ["transferId", "from", "to", "amount", "currency", "status", "sagaStep"]
+    }
+  },
+  "required": ["eventId", "eventType", "occurredAt", "version", "partitionKey", "payload"],
+  "examples": [
+    {
+      "eventId": "1f2e3d4c-5b6a-7988-9f0e-1d2c3b4a5968",
+      "eventType": "TransferCreated",
+      "occurredAt": "2026-08-12T06:30:00.000000Z",
+      "version": 1,
+      "partitionKey": "c3d4e5f6-0a1b-2c3d-4e5f-6a7b8c9d0e1f",
+      "payload": {
+        "transferId": "c3d4e5f6-0a1b-2c3d-4e5f-6a7b8c9d0e1f",
+        "from": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "to": "11223344-5566-7788-99aa-bbccddeeff00",
+        "amount": "150.00",
+        "currency": "EUR",
+        "status": "CREATED",
+        "sagaStep": "VALIDATION"
+      }
+    }
+  ]
+}

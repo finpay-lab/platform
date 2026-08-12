@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finpay.example/contracts/events/v1/FundsReserved.json",
+  "title": "FundsReserved",
+  "description": "Published by wallet-service on the `finpay.wallet` topic when funds are reserved (earmarked) on a wallet. Partitioned by walletId.",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique event identifier. Consumers MUST deduplicate on this field (outbox redelivery / at-least-once semantics)."
+    },
+    "eventType": {
+      "const": "FundsReserved",
+      "description": "Fixed event type; matches the schema name and the stream-filterable discriminator."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 timestamp when the event occurred."
+    },
+    "version": {
+      "const": 1,
+      "description": "Major schema version of this event. Additive changes stay at the same major; breaking changes require a new vN/ schema."
+    },
+    "partitionKey": {
+      "type": "string",
+      "description": "Kafka partition key; equals the business key walletId for ordering per wallet."
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "walletId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Wallet aggregate identifier."
+        },
+        "amount": {
+          "type": "string",
+          "format": "decimal",
+          "description": "Reserved amount as a decimal string (no floating point)."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO-4217 currency code of the reserved amount."
+        },
+        "reservationId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Reservation reference; used to release or reconcile this reservation."
+        }
+      },
+      "required": ["walletId", "amount", "currency", "reservationId"]
+    }
+  },
+  "required": ["eventId", "eventType", "occurredAt", "version", "partitionKey", "payload"],
+  "examples": [
+    {
+      "eventId": "7c1f0a3b-4d5e-6f7a-8b9c-0d1e2f3a4b5c",
+      "eventType": "FundsReserved",
+      "occurredAt": "2026-08-12T06:28:05.000000Z",
+      "version": 1,
+      "partitionKey": "b0a9c8d7-e6f5-4321-0fed-cba987654321",
+      "payload": {
+        "walletId": "b0a9c8d7-e6f5-4321-0fed-cba987654321",
+        "amount": "250.00",
+        "currency": "EUR",
+        "reservationId": "4e3d2c1b-0a9f-8e7d-6c5b-4a3f2e1d0c9b"
+      }
+    }
+  ]
+}

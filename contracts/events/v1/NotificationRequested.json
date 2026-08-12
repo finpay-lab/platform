@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finpay.example/contracts/events/v1/NotificationRequested.json",
+  "title": "NotificationRequested",
+  "description": "Published by many producers on the `finpay.notification` topic to request an outbound notification (EMAIL/SMS/PUSH). The notification-service consumes it asynchronously; notification failures must never affect the originating financial flow. Partitioned by notificationId.",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique event identifier. Consumers MUST deduplicate on this field (outbox redelivery / at-least-once semantics)."
+    },
+    "eventType": {
+      "const": "NotificationRequested",
+      "description": "Fixed event type; matches the schema name and the stream-filterable discriminator."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 timestamp when the event occurred."
+    },
+    "version": {
+      "const": 1,
+      "description": "Major schema version of this event. Additive changes stay at the same major; breaking changes require a new vN/ schema."
+    },
+    "partitionKey": {
+      "type": "string",
+      "description": "Kafka partition key; equals the business key notificationId."
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "notificationId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Notification request identifier; used for idempotency and reconciliation."
+        },
+        "channel": {
+          "type": "string",
+          "enum": ["EMAIL", "SMS", "PUSH"],
+          "description": "Outbound channel to deliver on."
+        },
+        "payloadRef": {
+          "type": "string",
+          "description": "Stable reference under which the notification content/template payload can be resolved by notification-service (e.g. template id + locale or content key)."
+        }
+      },
+      "required": ["notificationId", "channel", "payloadRef"]
+    }
+  },
+  "required": ["eventId", "eventType", "occurredAt", "version", "partitionKey", "payload"],
+  "examples": [
+    {
+      "eventId": "8a9b0c1d-2e3f-4a5b-6c7d-8e9f0a1b2c3d",
+      "eventType": "NotificationRequested",
+      "occurredAt": "2026-08-12T06:34:30.000000Z",
+      "version": 1,
+      "partitionKey": "9a0b1c2d-3e4f-5a6b-7c8d-9e0f1a2b3c4d",
+      "payload": {
+        "notificationId": "9a0b1c2d-3e4f-5a6b-7c8d-9e0f1a2b3c4d",
+        "channel": "EMAIL",
+        "payloadRef": "transfer_completed/EN/2026-08-12"
+      }
+    }
+  ]
+}

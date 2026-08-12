@@ -1,0 +1,314 @@
+# Account Service API — contract stub (v1)
+#
+# Establishes the API contract pattern for FinPay services (ARCHITECTURE.md: REST via
+# API Gateway, evolvable + documented, §25). This file is a contract ONLY — no
+# service implementation exists yet (TASK-009 is contracts-only).
+#
+# Versioning: URL path prefix /v1. Backward-compatible additive changes are allowed
+# in-place; breaking changes require a NEW major segment (/v2) — see VERSIONING.md.
+#
+# Conventions:
+#   - Controllers map transport -> use case only (Rule R3); operationId = use case name.
+#   - Account lifecycle: OPEN -> FROZEN/SUSPENDED -> CLOSED (state machine, Rule R9).
+#     Illegal transitions are rejected with 409.
+#   - Money/identifiers: strings (no floating point). Error envelope: code/message/traceId.
+openapi: 3.1.0
+info:
+  title: FinPay Account Service
+  version: "1.0.0"
+  description: |
+    Manages financial accounts: lifecycle, currency, ownership and status
+    (OPEN/FROZEN/SUSPENDED/CLOSED). Each service owns its own schema (Rule 1);
+    this service emits `AccountCreated`/`AccountStatusChanged` events after commit.
+  x-finpay-service: account-service
+  x-finpay-phase: 1
+servers:
+  - url: /v1
+    description: Versioned account-service API root
+
+tags:
+  - name: accounts
+    description: Account lifecycle
+  - name: account-status
+    description: Account status transitions
+
+paths:
+  /accounts:
+    get:
+      operationId: listAccountsForCustomer
+      tags: [accounts]
+      summary: Lists accounts owned by a customer.
+      description: Read path; projection over the own account DB (no shared schema, Rule 1).
+      parameters:
+        - name: customerId
+          in: query
+          required: true
+          description: Owning customer identifier.
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          required: false
+          description: Optional filter by account status.
+          schema:
+            $ref: "#/components/schemas/AccountStatus"
+      responses:
+        "200":
+          description: Matching accounts.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Account"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      operationId: createAccount
+      tags: [accounts]
+      summary: Creates an account (idempotent by idempotency-key header).
+      description: |
+        Idempotent creation per Rule 6 (Idempotency-Key header). Persists the
+        account, commits, then publishes `AccountCreated` via the outbox (ADR-0004).
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Client-generated idempotency key (UUID).
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccountRequest"
+      responses:
+        "201":
+          description: Account created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /accounts/{accountId}:
+    get:
+      operationId: getAccount
+      tags: [accounts]
+      summary: Retrieves an account by identifier.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The requested account.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /accounts/{accountId}/status:
+    get:
+      operationId: getAccountStatus
+      tags: [account-status]
+      summary: Retrieves the current account status.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Current status.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:
+                    type: string
+                    format: uuid
+                  status:
+                    $ref: "#/components/schemas/AccountStatus"
+                  changedAt:
+                    type: string
+                    format: date-time
+                required: [accountId, status, changedAt]
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    patch:
+      operationId: changeAccountStatus
+      tags: [account-status]
+      summary: Transitions the account status (state machine, Rule R9).
+      description: |
+        Only legal transitions are accepted; illegal ones return 409. Persists and
+        commits, then publishes `AccountStatusChanged` via the outbox.
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangeAccountStatusRequest"
+      responses:
+        "200":
+          description: Status transitioned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accountId:
+                    type: string
+                    format: uuid
+                  status:
+                    $ref: "#/components/schemas/AccountStatus"
+                  changedAt:
+                    type: string
+                    format: date-time
+                required: [accountId, status, changedAt]
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Gateway-issued JWT carrying the authenticated subject.
+
+  schemas:
+    AccountStatus:
+      type: string
+      enum: [OPEN, FROZEN, SUSPENDED, CLOSED]
+      description: Account lifecycle status. Legal transitions only (Rule R9).
+
+    CreateAccountRequest:
+      type: object
+      properties:
+        customerId:
+          type: string
+          format: uuid
+          description: Owning customer identifier.
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+          description: ISO-4217 currency code.
+      required: [customerId, currency]
+
+    ChangeAccountStatusRequest:
+      type: object
+      properties:
+        newStatus:
+          $ref: "#/components/schemas/AccountStatus"
+        reason:
+          type: string
+          description: Required operator/audit reason for the transition.
+      required: [newStatus, reason]
+
+    Account:
+      type: object
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        customerId:
+          type: string
+          format: uuid
+        currency:
+          type: string
+          pattern: "^[A-Z]{3}$"
+        status:
+          $ref: "#/components/schemas/AccountStatus"
+        openedAt:
+          type: string
+          format: date-time
+        lineOfBusiness:
+          type: string
+          description: Optional account categorization (e.g. savings, settlement).
+      required: [accountId, customerId, currency, status, openedAt]
+
+    Error:
+      type: object
+      description: Standard FinPay error envelope (SECURITY.md, §25).
+      properties:
+        code:
+          type: string
+          description: Stable, machine-readable error code.
+        message:
+          type: string
+          description: Human-readable message.
+        traceId:
+          type: string
+          format: uuid
+          description: Correlation/trace id for observability (§27).
+      required: [code, message, traceId]
+
+  responses:
+    BadRequest:
+      description: Request failed validation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Unauthorized:
+      description: Missing or invalid credentials.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: Illegal state transition or idempotency conflict.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

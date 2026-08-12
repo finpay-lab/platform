@@ -1,0 +1,253 @@
+# Identity Service API — contract stub (v1)
+#
+# Establishes the API contract pattern for FinPay services (ARCHITECTURE.md: REST via
+# API Gateway, evolvable + documented, §25). This file is a contract ONLY — no
+# service implementation exists yet (TASK-009 is contracts-only).
+#
+# Versioning: URL path prefix /v1. Backward-compatible additive changes are allowed
+# in-place; breaking changes require a NEW major segment (/v2) — see VERSIONING.md.
+#
+# Conventions:
+#   - Controllers map transport -> use case only (Rule R3); these contracts expose
+#     use-case-shaped operations (operationId = use case name).
+#   - Money/identifiers: strings (no floating point). Error envelope: code/message/traceId.
+openapi: 3.1.0
+info:
+  title: FinPay Identity Service
+  version: "1.0.0"
+  description: |
+    Integrates with the OIDC IdP (ADR-0006), maps external subjects to internal
+    principals, and manages roles/permissions/session metadata. Called by the
+    API Gateway; external clients do not talk to this service directly (§28).
+    AuthN happens at the gateway; the service resolves and maintains principals.
+  x-finpay-service: identity-service
+  x-finpay-phase: 1
+servers:
+  - url: /v1
+    description: Versioned identity-service API root
+
+tags:
+  - name: principal
+    description: Principal (internal user) retrieval
+  - name: roles
+    description: Role and permission grants
+
+paths:
+  /principal:
+    get:
+      operationId: getCurrentPrincipal
+      tags: [principal]
+      summary: Returns the principal of the current caller.
+      description: |
+        The gateway injects the authenticated caller identity; the service resolves
+        the internal principal with roles and permissions. Controller-only: no
+        business logic (Rule R3).
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: The resolved principal.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Principal"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /principals/{principalId}:
+    get:
+      operationId: getPrincipal
+      tags: [principal]
+      summary: Retrieves a principal by internal identifier.
+      parameters:
+        - name: principalId
+          in: path
+          required: true
+          description: Internal principal identifier (UUID).
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: The requested principal.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Principal"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /principals/{principalId}/roles:
+    get:
+      operationId: listRoles
+      tags: [roles]
+      summary: Lists role grants for a principal.
+      parameters:
+        - name: principalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Role identifiers granted to the principal.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /principals/{principalId}/roles/{roleName}:
+    put:
+      operationId: grantRole
+      tags: [roles]
+      summary: Grants a role to a principal (idempotent).
+      description: |
+        Idempotent by (principalId, roleName) per Rule 6. Emits `RoleChanged`
+        via the outbox after commit (no remote calls inside the transaction).
+      parameters:
+        - name: principalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: roleName
+          in: path
+          required: true
+          description: Stable role identifier.
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Role granted (or already present).
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          $ref: "#/components/responses/Conflict"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    delete:
+      operationId: revokeRole
+      tags: [roles]
+      summary: Revokes a role from a principal (idempotent).
+      parameters:
+        - name: principalId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: roleName
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Role revoked (or already absent).
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Gateway-issued JWT carrying the authenticated subject.
+
+  schemas:
+    Principal:
+      type: object
+      properties:
+        principalId:
+          type: string
+          format: uuid
+          description: Internal principal identifier, stable across IdP changes.
+        externalSubject:
+          type: string
+          description: Subject identifier from the OIDC provider (ADR-0006).
+        roles:
+          type: array
+          items:
+            $ref: "#/components/schemas/Role"
+        permissions:
+          type: array
+          items:
+            type: string
+          description: Derived permission identifiers.
+        active:
+          type: boolean
+          description: Whether the principal is active.
+      required: [principalId, externalSubject, active]
+
+    Role:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Stable role identifier.
+        description:
+          type: string
+      required: [name]
+
+    Error:
+      type: object
+      description: Standard FinPay error envelope (SECURITY.md, §25).
+      properties:
+        code:
+          type: string
+          description: Stable, machine-readable error code.
+        message:
+          type: string
+          description: Human-readable message.
+        traceId:
+          type: string
+          format: uuid
+          description: Correlation/trace id for observability (§27).
+      required: [code, message, traceId]
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid credentials.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Forbidden:
+      description: Authenticated but not authorized for the operation.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    NotFound:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    Conflict:
+      description: The request conflicts with the current resource state.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+    InternalError:
+      description: Unexpected server error.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"

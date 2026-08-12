@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finpay.example/contracts/events/v1/PaymentCompleted.json",
+  "title": "PaymentCompleted",
+  "description": "Published by payment-service on the `finpay.payment` topic when a payment reaches the terminal COMPLETED state. Partitioned by paymentId.",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique event identifier. Consumers MUST deduplicate on this field (outbox redelivery / at-least-once semantics)."
+    },
+    "eventType": {
+      "const": "PaymentCompleted",
+      "description": "Fixed event type; matches the schema name and the stream-filterable discriminator."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 timestamp when the event occurred."
+    },
+    "version": {
+      "const": 1,
+      "description": "Major schema version of this event. Additive changes stay at the same major; breaking changes require a new vN/ schema."
+    },
+    "partitionKey": {
+      "type": "string",
+      "description": "Kafka partition key; equals the business key paymentId for ordering per payment."
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "paymentId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Payment aggregate identifier."
+        },
+        "amount": {
+          "type": "string",
+          "format": "decimal",
+          "description": "Payment amount as a decimal string (no floating point)."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO-4217 currency code of the payment."
+        },
+        "status": {
+          "const": "COMPLETED",
+          "description": "Terminal payment status."
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Client-supplied idempotency key (Rule 6) that made this payment idempotent on creation."
+        }
+      },
+      "required": ["paymentId", "amount", "currency", "status", "idempotencyKey"]
+    }
+  },
+  "required": ["eventId", "eventType", "occurredAt", "version", "partitionKey", "payload"],
+  "examples": [
+    {
+      "eventId": "5e6f7081-92a3-b4c5-d6e7-f8a919202223",
+      "eventType": "PaymentCompleted",
+      "occurredAt": "2026-08-12T06:40:00.000000Z",
+      "version": 1,
+      "partitionKey": "6f708192-a3b4-c5d6-e7f8-a91920222324",
+      "payload": {
+        "paymentId": "6f708192-a3b4-c5d6-e7f8-a91920222324",
+        "amount": "45.99",
+        "currency": "EUR",
+        "status": "COMPLETED",
+        "idempotencyKey": "0e1f2a3b-4c5d-6e7f-8a9b-0c1d2e3f4a5b"
+      }
+    }
+  ]
+}

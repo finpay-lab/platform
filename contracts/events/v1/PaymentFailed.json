@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finpay.example/contracts/events/v1/PaymentFailed.json",
+  "title": "PaymentFailed",
+  "description": "Published by payment-service on the `finpay.payment` topic when a payment reaches the terminal FAILED state. Partitioned by paymentId.",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique event identifier. Consumers MUST deduplicate on this field (outbox redelivery / at-least-once semantics)."
+    },
+    "eventType": {
+      "const": "PaymentFailed",
+      "description": "Fixed event type; matches the schema name and the stream-filterable discriminator."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 timestamp when the event occurred."
+    },
+    "version": {
+      "const": 1,
+      "description": "Major schema version of this event. Additive changes stay at the same major; breaking changes require a new vN/ schema."
+    },
+    "partitionKey": {
+      "type": "string",
+      "description": "Kafka partition key; equals the business key paymentId for ordering per payment."
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "paymentId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Payment aggregate identifier."
+        },
+        "amount": {
+          "type": "string",
+          "format": "decimal",
+          "description": "Payment amount as a decimal string (no floating point)."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO-4217 currency code of the payment."
+        },
+        "status": {
+          "const": "FAILED",
+          "description": "Terminal payment status."
+        },
+        "idempotencyKey": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Client-supplied idempotency key (Rule 6) that made this payment idempotent on creation."
+        },
+        "failureReason": {
+          "type": "string",
+          "description": "Human-readable failure cause; useful for observability and support."
+        }
+      },
+      "required": ["paymentId", "amount", "currency", "status", "idempotencyKey"]
+    }
+  },
+  "required": ["eventId", "eventType", "occurredAt", "version", "partitionKey", "payload"],
+  "examples": [
+    {
+      "eventId": "6f708192-a3b4-c5d6-e7f8-a91920222325",
+      "eventType": "PaymentFailed",
+      "occurredAt": "2026-08-12T06:41:30.000000Z",
+      "version": 1,
+      "partitionKey": "7f8192a3-b4c5-d6e7-f8a9-192022232425",
+      "payload": {
+        "paymentId": "7f8192a3-b4c5-d6e7-f8a9-192022232425",
+        "amount": "45.99",
+        "currency": "EUR",
+        "status": "FAILED",
+        "idempotencyKey": "1f2a3b4c-5d6e-7f8a-9b0c-1d2e3f4a5b6c",
+        "failureReason": "Insufficient funds"
+      }
+    }
+  ]
+}

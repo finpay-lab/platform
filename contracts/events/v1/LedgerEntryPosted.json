@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://finpay.example/contracts/events/v1/LedgerEntryPosted.json",
+  "title": "LedgerEntryPosted",
+  "description": "Published by ledger-service on the `finpay.ledger` topic after a double-entry posting is committed. The ledger is the source of truth for money movement; this event is the immutable posting notification. Partitioned by accountId.",
+  "type": "object",
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Globally unique event identifier. Consumers MUST deduplicate on this field (outbox redelivery / at-least-once semantics)."
+    },
+    "eventType": {
+      "const": "LedgerEntryPosted",
+      "description": "Fixed event type; matches the schema name and the stream-filterable discriminator."
+    },
+    "occurredAt": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC ISO-8601 timestamp when the event occurred."
+    },
+    "version": {
+      "const": 1,
+      "description": "Major schema version of this event. Additive changes stay at the same major; breaking changes require a new vN/ schema."
+    },
+    "partitionKey": {
+      "type": "string",
+      "description": "Kafka partition key; equals the business key accountId for ordering per account."
+    },
+    "payload": {
+      "type": "object",
+      "properties": {
+        "postingId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Ledger posting identifier; immutable once committed."
+        },
+        "accountId": {
+          "type": "string",
+          "format": "uuid",
+          "description": "Ledger account the entry is posted against."
+        },
+        "debit": {
+          "type": "string",
+          "format": "decimal",
+          "description": "Debit leg amount as a decimal string (zero if credit-only posting)."
+        },
+        "credit": {
+          "type": "string",
+          "format": "decimal",
+          "description": "Credit leg amount as a decimal string (zero if debit-only posting)."
+        },
+        "amount": {
+          "type": "string",
+          "format": "decimal",
+          "description": "Posting amount as a decimal string (no floating point)."
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$",
+          "description": "ISO-4217 currency code of the posting."
+        },
+        "ts": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Business timestamp when the posting was committed."
+        }
+      },
+      "required": ["postingId", "accountId", "debit", "credit", "amount", "currency", "ts"]
+    }
+  },
+  "required": ["eventId", "eventType", "occurredAt", "version", "partitionKey", "payload"],
+  "examples": [
+    {
+      "eventId": "4c5d6e7f-8091-a2b3-c4d5-e6f7a8192021",
+      "eventType": "LedgerEntryPosted",
+      "occurredAt": "2026-08-12T06:34:22.500000Z",
+      "version": 1,
+      "partitionKey": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "payload": {
+        "postingId": "5d6e7f80-91a2-b3c4-d5e6-f7a819202122",
+        "accountId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "debit": "150.00",
+        "credit": "0.00",
+        "amount": "150.00",
+        "currency": "EUR",
+        "ts": "2026-08-12T06:34:22.400000Z"
+      }
+    }
+  ]
+}
