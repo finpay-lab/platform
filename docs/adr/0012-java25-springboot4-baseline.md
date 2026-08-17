@@ -39,7 +39,7 @@ with:
 | Spring Boot      | 4.1.0       | Jakarta EE 11, Spring Framework 7 |
 | Spring Security  | 7.0.0       | managed by SB BOM |
 | Spring Kafka     | 4.0.0       | managed by SB BOM |
-| Gradle           | 9.7.x       | build image `gradle:9.7.0-jdk25-ubi`; modules target Java 21 via `javac --release` (running JDK 25 compiles down to 21) — no toolchain pin, to avoid the incompatible Foojay resolver on Gradle 9.7 |
+| Gradle           | 9.7.x       | build image `gradle:9.7.0-jdk21-ubi` (**JDK 21, not 25** — Lombok 1.18.46's annotation processor uses internal `com.sun.tools.javac.*` APIs that break on JDK 25; building on JDK 21 with `javac --release 21` keeps Lombok working and avoids any class-file major-version mismatch). No toolchain pin. |
 | Flyway           | 11.10.0     | |
 | Testcontainers   | 1.21.1      | |
 | PostgreSQL/Redis/Kafka | 16 / 7.4 / 3.8 | unchanged |
