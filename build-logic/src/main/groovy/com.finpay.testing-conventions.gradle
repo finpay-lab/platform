@@ -1,15 +1,11 @@
 // Testing conventions. Uses the version catalog accessors (libs.*) because raw
 // string coordinates fail to resolve inside a precompiled plugin.
 dependencies {
-    // junit-bom (jupiter BOM) transitively governs the whole org.junit.platform
-    // stack (engine, launcher, commons) at 1.13.4, keeping them aligned. Under
-    // Gradle 9 an unaligned launcher/engine pair breaks test discovery
-    // ("OutputDirectoryCreator not available"). Declaring platform modules
-    // explicitly or with a mismatched version caused that; letting the BOM
-    // govern them fixes it.
-    testImplementation platform(libs.junit.bom)
-    add('testImplementation', libs.junit.jupiter)
-    add('testRuntimeOnly', libs.junit.platform.launcher) // required by Gradle 9 useJUnitPlatform(); aligned via java-conventions resolutionStrategy
+    // Launcher is required by Gradle 9's useJUnitPlatform(); the junit stack
+    // versions are force-pinned in java-conventions (resolutionStrategy) so the
+    // launcher and engine stay aligned under Gradle 9.
+    testImplementation libs.junit.jupiter
+    add('testRuntimeOnly', libs.junit.platform.launcher)
     add('testImplementation', libs.assertj)
     add('testImplementation', libs.mockito.core)
     add('testImplementation', libs.mockito.junit)
