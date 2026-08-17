@@ -1,15 +1,16 @@
 // Spring Boot application module (services). Applies java-library so `api()`
-// configuration is available for shared libraries.
+// configuration is available for shared libraries. Reuses java-conventions for
+// the shared compile/release setup.
 plugins {
+    id 'com.finpay.java-conventions'
     id 'java-library'
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
 }
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+    // No toolchain pin — see com.finpay.java-conventions (uses running JDK 25 +
+    // javac --release to target the required level).
 }
 
 repositories {

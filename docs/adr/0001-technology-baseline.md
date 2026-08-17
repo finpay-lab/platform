@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted — **superseded for the version baseline by ADR-0012** (Java 25 / Spring Boot 4.1.0). The architectural reasoning in this ADR (teach *why*, not *which version*; keep the lab continuously buildable) remains valid.
 
 ## Context
 

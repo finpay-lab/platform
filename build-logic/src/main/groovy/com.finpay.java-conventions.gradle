@@ -4,9 +4,10 @@ plugins {
 }
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
+    // Toolchain intentionally NOT pinned: the build image (gradle:9.7.0-jdk25-ubi)
+    // runs on JDK 25, and javac --release (set below) targets the required level.
+    // Pinning a toolchain forces a Foojay download that is incompatible with
+    // Gradle 9.7 in this environment.
 }
 
 repositories {

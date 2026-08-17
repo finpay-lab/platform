@@ -25,11 +25,13 @@ product. Quality of engineering reasoning matters more than feature count.
 9. **Every state machine defines legal transitions**; reject invalid ones.
 10. **Every architectural shortcut must be documented** (ADR or comment).
 
-## Tech baseline (ADR-0001)
+## Tech baseline (ADR-0012, supersedes ADR-0001)
 
-Java 21 LTS · Spring Boot 3.3.5 · Gradle 8.10.2 · PostgreSQL 16 · Redis 7.4 ·
-Kafka 3.8 (KRaft) · OpenSearch 2.17 · Flyway 10 · Testcontainers 1.20 ·
-OpenTelemetry. Do NOT bump these without an ADR.
+Java 25 LTS · Spring Boot 4.1.0 · Gradle 8.14.x · PostgreSQL 16 · Redis 7.4 ·
+Kafka 3.8 (KRaft) · OpenSearch 2.17 · Flyway 11 · Testcontainers 1.21 ·
+OpenTelemetry. See `docs/adr/0012-java25-springboot4-baseline.md`. Versions are
+centralized in `gradle/libs.versions.toml`; bump there + the `build-logic`
+convention plugins, never per-service.
 
 ## Build system
 
