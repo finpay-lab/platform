@@ -15,7 +15,7 @@ dependencies {
     add('testImplementation', libs.archunit.junit)
     add('testImplementation', libs.testcontainers)
     add('testImplementation', libs.testcontainers.junit)
-    add('testImplementation', libs.awaitility)
+    add('testImplementation', libs.awaitility) { exclude group: 'org.junit.platform', module: 'junit-platform-launcher' }
 }
 
 tasks.withType(Test).configureEach {
