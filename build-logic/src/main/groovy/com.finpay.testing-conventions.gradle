@@ -16,8 +16,6 @@ dependencies {
     add('testImplementation', libs.testcontainers)
     add('testImplementation', libs.testcontainers.junit)
     add('testImplementation', libs.awaitility) { exclude group: 'org.junit.platform', module: 'junit-platform-launcher' }
-    // Spring Boot test support (@SpringBootTest, DynamicPropertyRegistry, etc.)
-    add('testImplementation', libs.springBootTest)
 }
 
 tasks.withType(Test).configureEach {
