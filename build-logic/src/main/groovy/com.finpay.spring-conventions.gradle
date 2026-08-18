@@ -22,6 +22,27 @@ dependencies {
     testAnnotationProcessor libs.lombok
 }
 
+// Override versions that the Spring Boot dependency-management BOM pins to
+// older releases, which otherwise break alignment under Gradle 9:
+//  - junit-platform-launcher must match junit-jupiter-engine (both 6.0.3); the
+//    SB BOM pulls launcher 1.11.3 via testcontainers-junit, causing
+//    "OutputDirectoryCreator not available" at test discovery.
+//  - testcontainers is bumped centrally in the catalog; the BOM pins 1.20.4.
+dependencyManagement {
+    dependencies {
+        dependency 'org.junit.jupiter:junit-jupiter:6.0.3'
+        dependency 'org.junit.jupiter:junit-jupiter-api:6.0.3'
+        dependency 'org.junit.jupiter:junit-jupiter-engine:6.0.3'
+        dependency 'org.junit.jupiter:junit-jupiter-params:6.0.3'
+        dependency 'org.junit.platform:junit-platform-commons:6.0.3'
+        dependency 'org.junit.platform:junit-platform-engine:6.0.3'
+        dependency 'org.junit.platform:junit-platform-launcher:6.0.3'
+        dependency 'org.testcontainers:testcontainers:1.21.1'
+        dependency 'org.testcontainers:junit-jupiter:1.21.1'
+        dependency 'org.testcontainers:postgresql:1.21.1'
+    }
+}
+
 // Libraries are not packaged as bootable jars. Services override this.
 bootJar {
     enabled = false
