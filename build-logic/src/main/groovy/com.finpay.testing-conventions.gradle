@@ -16,10 +16,8 @@ dependencies {
     add('testImplementation', libs.testcontainers)
     add('testImplementation', libs.testcontainers.junit)
     add('testImplementation', libs.awaitility) { exclude group: 'org.junit.platform', module: 'junit-platform-launcher' }
-    // Spring Boot test support (@SpringBootTest, DynamicPropertyRegistry, etc.).
-    // Use a literal coordinate: the version is managed by the SB BOM, and a
-    // string avoids the stale precompiled-plugin catalog accessor problem.
-    add('testImplementation', 'org.springframework.boot:spring-boot-starter-test')
+    // Spring Boot test support (@SpringBootTest, DynamicPropertyRegistry, etc.)
+    add('testImplementation', libs.springBootTest)
 }
 
 tasks.withType(Test).configureEach {
