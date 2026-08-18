@@ -24,11 +24,14 @@ dependencies {
 
 // Override versions that the Spring Boot dependency-management BOM pins to
 // older releases, which otherwise break alignment under Gradle 9:
-//  - junit-platform-launcher must match junit-jupiter-engine (both 6.0.3); the
-//    SB BOM pulls launcher 1.11.3 via testcontainers-junit, causing
-//    "OutputDirectoryCreator not available" at test discovery.
-//  - testcontainers is bumped centrally in the catalog; the BOM pins 1.20.4.
+//  - junit-platform-launcher must match junit-jupiter-engine (both 6.0.3); a
+//    transitive junit-bom:5.11.3 (from testcontainers/awaitility) constrains
+//    launcher to 1.11.3, causing "OutputDirectoryCreator not available" at
+//    test discovery. Importing the junit 6 BOM overrides that constraint.
 dependencyManagement {
+    imports {
+        mavenBom 'org.junit:junit-bom:6.0.3'
+    }
     dependencies {
         dependency 'org.junit.jupiter:junit-jupiter:6.0.3'
         dependency 'org.junit.jupiter:junit-jupiter-api:6.0.3'
