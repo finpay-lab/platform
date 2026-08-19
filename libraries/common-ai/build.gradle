@@ -1,0 +1,12 @@
+plugins {
+    id 'com.finpay.spring-conventions'
+    id 'com.finpay.testing-conventions'
+    id 'com.finpay.publish-conventions'
+}
+
+description = 'FinPay shared AI core (AI-8): BYOK HTTP client, retry + circuit breaker, structured audit of every AI call. Consumed by AI-1..AI-7.'
+
+dependencies {
+    api libs.spring.boot.starter.web
+    testImplementation libs.spring.test
+}

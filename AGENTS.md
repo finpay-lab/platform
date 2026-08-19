@@ -43,7 +43,9 @@ convention plugins, never per-service.
 - Each module applies conventions; libraries set `bootJar { enabled = false }`,
   services leave it enabled.
 - Always run builds via the Gradle Docker image (no JDK locally):
-  `docker run --rm -v "$PWD":/work -w /work -v gradle-cache:/root/.gradle gradle:8.10.2-jdk21 gradle <task>`
+  `docker run --rm -v "$PWD":/work -w /work -v gradle-cache:/root/.gradle gradle:8.14.5-jdk21-ubi gradle <task>`
+  (Spring Boot 4.x requires Gradle 8.14+; the older `gradle:8.10.2-jdk21`
+  image fails with "Spring Boot plugin requires Gradle 8.x (8.14 or later)".)
   Because the Docker volume mangles file mtimes, include `:module:clean` (or
   full `clean`) before a build so Gradle recompiles correctly.
 

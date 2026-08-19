@@ -20,6 +20,7 @@ includeBuild 'build-logic'
 include 'libraries:common-web'
 include 'libraries:common-security'
 include 'libraries:common-observability'
+include 'libraries:common-ai'
 include 'libraries:common-test'
 
 // Business services land in later phases (P1+). Placeholder kept intentional.
