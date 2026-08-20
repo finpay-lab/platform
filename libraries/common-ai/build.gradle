@@ -1,0 +1,15 @@
+plugins {
+    id 'com.finpay.spring-conventions'
+    id 'com.finpay.testing-conventions'
+    id 'com.finpay.publish-conventions'
+}
+
+description = 'FinPay shared ai-core: BYOK AI client, retry + circuit-breaker, structured audit (FP-65 / AI-8).'
+
+dependencies {
+    // No external AI/HTTP libs: uses java.net.http.HttpClient + manual retry/
+    // circuit-breaker to honour the lab's "no uncatalogued dependency" rule.
+    implementation libs.spring.boot.starter.web
+    testImplementation libs.junit.jupiter
+    testImplementation libs.assertj
+}

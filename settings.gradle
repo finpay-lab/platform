@@ -21,5 +21,6 @@ include 'libraries:common-web'
 include 'libraries:common-security'
 include 'libraries:common-observability'
 include 'libraries:common-test'
+include 'libraries:common-ai'
 
 // Business services land in later phases (P1+). Placeholder kept intentional.
