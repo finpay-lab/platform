@@ -36,6 +36,7 @@ libraries/     shared engineering libraries
   common-security      roles/RBAC primitives
   common-observability W3C trace context helpers
   common-test          shared ArchUnit architecture rules
+  common-ai           dependency-free BYOK LLM client (retry, audit, off-mode) — FP-65
 services/      business services — land in P1+ (empty by design)
 contracts/     event + API contract stubs (P0)
 docs/          architecture, ADRs, task specs
@@ -51,10 +52,10 @@ No JDK needed locally — build through the pinned Gradle Docker image
 
 ```bash
 docker run --rm -v "$PWD":/work -w /work -v gradle-cache:/root/.gradle \
-  gradle:8.10.2-jdk21 gradle projects
+  gradle:8.14.5-jdk21 gradle projects
 
 docker run --rm -v "$PWD":/work -w /work -v gradle-cache:/root/.gradle \
-  gradle:8.10.2-jdk21 gradle clean build
+  gradle:8.14.5-jdk21 gradle clean build
 ```
 
 `gradle build` must stay green on every commit. Because the Docker volume
@@ -72,7 +73,7 @@ See `docs/LOCAL_DEVELOPMENT.md` for the run book and first-run setup.
 
 ## Tech baseline (ADR-0001)
 
-Java 21 LTS · Spring Boot 3.3.5 · Gradle 8.10.2 · PostgreSQL 16 · Redis 7.4 ·
+Java 21 LTS · **Spring Boot 4.1.0** · Gradle 8.14.x · PostgreSQL 16 · Redis 7.4 ·
 Kafka 3.8 (KRaft) · OpenSearch 2.17 · Flyway 10 · Testcontainers 1.20 ·
 OpenTelemetry. Do NOT bump these without an ADR.
 
